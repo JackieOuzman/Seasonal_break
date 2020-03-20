@@ -34,12 +34,21 @@ file_save <- ("W:/Pastures/Gridded_seasonal_break") #jackie
 setwd("I:/work/silo") #the folder now has curley bracket which is means something in R so the is a work around
 getwd()
 
-------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------
+#bring in my spatial data
+
+
+site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/SA_Vic_Mallee.shp")
+site_sf <- as(site_import, "Spatial") #convert to a sp object
+year_input <- 2000
+site <- site_sf
+
+#------------------------------------------------------------------------------------------------------------
 ##1. define the boundary with and use a single layer raster 
 
-daily_rain <- brick(
-  paste("daily_rain/",
-        2000, ".daily_rain.nc", sep = ""),varname = "daily_rain")
+  daily_rain <- brick(
+    paste("daily_rain/",
+          "2000", ".daily_rain.nc", sep = ""),varname = "daily_rain")
 
 #crop to a fix area
 daily_rain_crop <- crop(daily_rain, site)
@@ -54,14 +63,7 @@ site_bound_pts_df <- as.data.frame(site_bound_pts)
 site_bound_pts_df <- select(site_bound_pts_df, x, y)
 site_bound_pts_df_point <- SpatialPointsDataFrame(site_bound_pts_df[,c("x", "y")], site_bound_pts_df)
 
-------------------------------------------------------------------------------------------------------------------
-  #bring in my spatial data
 
-
-site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/SA_Vic_Mallee.shp")
-site_sf <- as(site_import, "Spatial") #convert to a sp object
-year_input <- 2000
-site <- site_sf
 
 
 ### Rainfall and Evaporation
@@ -107,7 +109,7 @@ site <- site_sf
   
   ###### This is part 2 changing the grids into df
   ### 2a is the Rain_evap grid
-  ---------------------------------------------------------------------------------------------------------
+  #---------------------------------------------------------------------------------------------------------
   Rain_evap_extract <- raster::extract(Rain_evap, 
                                        site_bound_pts_df_point, method="simple")
   
@@ -132,7 +134,7 @@ site <- site_sf
                                      "171", "172", "173", "174", "175", "176","177","178","179","180",
                                      "181", "182")
   
-  -----------------------------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------------------------------
   
   #Remove the clm that have no data for  Rain_evap and add the coords
   str(Rain_evap_extract_wide)
@@ -153,8 +155,8 @@ site <- site_sf
   Rain_evap_extract_df_narrow$day_factor <- as.factor(Rain_evap_extract_df_narrow$day)
   Rain_evap_extract_df_narrow$Rain_evap_numb<- as.double(Rain_evap_extract_df_narrow$Rain_evap)
   
-  dev.off() #having trouble with mapping this fixes it!
- ------------------------------------------------------------------------------------------------------ 
+  #dev.off() #having trouble with mapping this fixes it!
+ #------------------------------------------------------------------------------------------------------ 
   ggplot(Rain_evap_extract_df_narrow, aes(day, Rain_evap_numb))+
   geom_point()+
   theme_classic()+
@@ -166,11 +168,11 @@ site <- site_sf
          caption = "Seasonal break is when sum 7 days rainfall is greater than sum 7 days evaopration")
   
   
-  --------------------------------------------------------------------------------------------------------
+  #--------------------------------------------------------------------------------------------------------
   
     
     ### 2b is the rainfall grid seasonal_break_rainfall_MovMean7
-    ---------------------------------------------------------------------------------------------------------
+  #  ---------------------------------------------------------------------------------------------------------
   head(seasonal_break_rainfall_MovMean7)
     
   Rain_extract <- raster::extract(seasonal_break_rainfall_MovMean7, 
@@ -197,7 +199,7 @@ site <- site_sf
                                      "171", "172", "173", "174", "175", "176","177","178","179","180",
                                      "181", "182")
   
-  -----------------------------------------------------------------------------------------------------
+ # -----------------------------------------------------------------------------------------------------
     
     #Remove the clm that have no data for  Rainfall and add the coords
   
@@ -218,25 +220,13 @@ site <- site_sf
   Rain_extract_df_narrow$day_factor <- as.factor(Rain_extract_df_narrow$day)
   Rain_extract_df_narrow$Rain_numb<- as.double(Rain_extract_df_narrow$Rain)
   
-  dev.off() #having trouble with mapping this fixes it!
+  
   head(Rain_extract_df_narrow)
   str(Rain_extract_df_narrow)
-  ------------------------------------------------------------------------------------------------------ 
-    ggplot(Rain_extract_df_narrow, aes(day_factor, Rain_numb))+
-    geom_point()+
-    theme_classic()+
-    theme(axis.text.x = element_text(angle = 90, hjust=1),
-          plot.caption = element_text(hjust = 0))+
-    labs(x = "Day of year",
-         y = "",
-         title = "Seasonal break inputs check for Mallee",
-         caption = "Seasonal break is when sum 7 days rainfall is greater than sum 7 days evaopration")
-  
-  
-  --------------------------------------------------------------------------------------------------------
+
     
     ### 2c is the evaopration  grid seasonal_break_evap_MovMean7
-    ---------------------------------------------------------------------------------------------------------
+  #---------------------------------------------------------------------------------------------------------
     head(seasonal_break_evap_MovMean7)
   
   Evap_extract <- raster::extract(seasonal_break_evap_MovMean7, 
@@ -263,7 +253,7 @@ site <- site_sf
                                 "171", "172", "173", "174", "175", "176","177","178","179","180",
                                 "181", "182")
   
-  -----------------------------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------------------------------
     
     #Remove the clm that have no data for  evap and add the coords
     
@@ -284,7 +274,7 @@ site <- site_sf
   Evap_extract_df_narrow$day_factor <- as.factor(Evap_extract_df_narrow$day)
   Evap_extract_df_narrow$Evap_numb<- as.double(Evap_extract_df_narrow$Evap)
   
-  dev.off() #having trouble with mapping this fixes it!
+  #dev.off() #having trouble with mapping this fixes it!
   head(Evap_extract_df_narrow)
   str(Evap_extract_df_narrow)
   ------------------------------------------------------------------------------------------------------ 
@@ -302,5 +292,16 @@ site <- site_sf
     dim(Rain_Evap_both)
     
     Rain_Evap_both <- Rain_Evap_both[,c(1:5, 12, 19)]
+    
+    
+    temp <- head(Rain_Evap_both,30000)
+    
+      
+    ggplot(temp,aes(day,Rain))+
+      geom_point(colour='blue') +
+      geom_point(data=temp,aes(day,Evap),colour='red') +
+      geom_point(data=temp,aes(day,Rain_evap),colour='black') 
+    
+    
     
     
