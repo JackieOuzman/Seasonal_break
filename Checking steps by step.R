@@ -38,11 +38,12 @@ getwd()
 #bring in my spatial data
 
 
-site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/SA_Vic_Mallee.shp")
+#site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/SA_Vic_Mallee.shp")
+site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/Lamaroo_buff12.shp")
 site_sf <- as(site_import, "Spatial") #convert to a sp object
 year_input <- 2000
 site <- site_sf
-
+plot(site)
 #------------------------------------------------------------------------------------------------------------
 ##1. define the boundary with and use a single layer raster 
 
@@ -55,6 +56,8 @@ daily_rain_crop <- crop(daily_rain, site)
 daily_rain_crop
 
 site_bound_raster <- daily_rain_crop$ X2000.01.01
+plot(site_bound_raster)
+site_bound_raster
 
 ##2. extract points from the raster as a point shapefile
 site_bound_pts <- rasterToPoints(site_bound_raster)
@@ -63,7 +66,7 @@ site_bound_pts_df <- as.data.frame(site_bound_pts)
 site_bound_pts_df <- select(site_bound_pts_df, x, y)
 site_bound_pts_df_point <- SpatialPointsDataFrame(site_bound_pts_df[,c("x", "y")], site_bound_pts_df)
 
-
+head(site_bound_pts_df_point)
 
 
 ### Rainfall and Evaporation
@@ -85,7 +88,7 @@ site_bound_pts_df_point <- SpatialPointsDataFrame(site_bound_pts_df[,c("x", "y")
   #Add the moving window avearge of 7 days ? should this be sum?
   seasonal_break_rainfall_MovMean7 <- calc(daily_rain_crop_subset_day, function(x) movingFun(x, 7, sum, "to"))
   
-  
+  seasonal_break_rainfall_MovMean7
   ############################################
   ##2. Evaporation stuff here similar to above
   daily_evap <- brick(
@@ -164,7 +167,7 @@ site_bound_pts_df_point <- SpatialPointsDataFrame(site_bound_pts_df[,c("x", "y")
           plot.caption = element_text(hjust = 0))+
     labs(x = "Day of year",
          y = "",
-         title = "Seasonal break inputs check for Mallee",
+         title = "Seasonal break inputs check for site",
          caption = "Seasonal break is when sum 7 days rainfall is greater than sum 7 days evaopration")
   
   
@@ -277,7 +280,7 @@ site_bound_pts_df_point <- SpatialPointsDataFrame(site_bound_pts_df[,c("x", "y")
   #dev.off() #having trouble with mapping this fixes it!
   head(Evap_extract_df_narrow)
   str(Evap_extract_df_narrow)
-  ------------------------------------------------------------------------------------------------------ 
+  #------------------------------------------------------------------------------------------------------ 
     
     str(Rain_extract_df_narrow)
     str(Evap_extract_df_narrow)
@@ -292,16 +295,28 @@ site_bound_pts_df_point <- SpatialPointsDataFrame(site_bound_pts_df[,c("x", "y")
     dim(Rain_Evap_both)
     
     Rain_Evap_both <- Rain_Evap_both[,c(1:5, 12, 19)]
+    Rain_Evap_both$day_numb <- as.double(Rain_Evap_both$day)
     
-    
-    temp <- head(Rain_Evap_both,30000)
-    
+    Rain_Evap_both_90_120 <- Rain_Evap_both %>% 
+      filter(between(day_numb, 90, 120))
       
-    ggplot(temp,aes(day,Rain))+
+     
+    ### Now a bit of stuffing around to check find out what sites are near Lamaroo and what days our day calu does this make sense?
+    #In year 2000 this was around 105 and 106
+    # in 1972 we have a mix of NA for this same site
+    
+    #fix up the graphs so they look good
+    ggplot(Rain_Evap_both,aes(day,Rain))+
       geom_point(colour='blue') +
-      geom_point(data=temp,aes(day,Evap),colour='red') +
-      geom_point(data=temp,aes(day,Rain_evap),colour='black') 
+      geom_point(data=Rain_Evap_both,aes(day,Evap),colour='red') +
+      geom_point(data=Rain_Evap_both,aes(day,Rain_evap),colour='black') 
     
     
+    ggplot(Rain_Evap_both_90_120,aes(day_numb,Rain))+
+      geom_point(colour='blue') +
+      geom_point(data=Rain_Evap_both_90_120,aes(day_numb,Evap),colour='red') +
+      geom_point(data=Rain_Evap_both_90_120,aes(day_numb,Rain_evap),colour='black') 
     
+    
+     
     
