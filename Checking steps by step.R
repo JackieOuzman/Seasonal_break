@@ -34,16 +34,34 @@ file_save <- ("W:/Pastures/Gridded_seasonal_break") #jackie
 setwd("I:/work/silo") #the folder now has curley bracket which is means something in R so the is a work around
 getwd()
 
+------------------------------------------------------------------------------------------------------------
+##1. define the boundary with and use a single layer raster 
+
+daily_rain <- brick(
+  paste("daily_rain/",
+        2000, ".daily_rain.nc", sep = ""),varname = "daily_rain")
+
+#crop to a fix area
+daily_rain_crop <- crop(daily_rain, site)
+daily_rain_crop
+
+site_bound_raster <- daily_rain_crop$ X2000.01.01
+
+##2. extract points from the raster as a point shapefile
+site_bound_pts <- rasterToPoints(site_bound_raster)
+names(site_bound_pts) <- c("longitude", "latitude", "value")
+site_bound_pts_df <- as.data.frame(site_bound_pts)
+site_bound_pts_df <- select(site_bound_pts_df, x, y)
+site_bound_pts_df_point <- SpatialPointsDataFrame(site_bound_pts_df[,c("x", "y")], site_bound_pts_df)
+
 ------------------------------------------------------------------------------------------------------------------
   #bring in my spatial data
-  GRDC_bound_mallee <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/SA_Vic_Mallee.shp")
-GRDC_bound_mallee_sf <- as(GRDC_bound_mallee, "Spatial") #convert to a sp object
-plot(GRDC_bound_mallee_sf)
 
 
-
+site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/SA_Vic_Mallee.shp")
+site_sf <- as(site_import, "Spatial") #convert to a sp object
 year_input <- 2000
-site <- GRDC_bound_mallee_sf
+site <- site_sf
 
 
 ### Rainfall and Evaporation
