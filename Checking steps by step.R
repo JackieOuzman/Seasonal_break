@@ -1,31 +1,29 @@
 #This is to chcek if our function is working and drill down into one site
 
-library(sp)
-library(rgdal)
-library(raster)
 
-library(ncdf4)
-library(RNetCDF)
-library(RColorBrewer)
-library(data.table)
-library(reshape2)
-library(doBy)
-library(maptools)
-library(maps)
-library(lattice)
-library(latticeExtra)
-library(rasterVis)
-library(mapdata)
 
-library(lubridate)
-library(spatial.tools)
-library(mapdata)
-require(RSenaps) #error message for my R version
-library(settings)
-library(httr)
-library(sf)
-library(rgeos)
-library(tidyverse)
+libs <- c("dplyr", "tidyr", 
+          "ggplot2", "ggpubr",
+          "ncdf4", "raster", "rgdal", 
+          "lubridate", 
+          "rgeos", "smoothr", "sf",
+          "reshape")
+
+install.libraries <- function(lib=NULL){
+  new <- lib[!(lib %in% installed.packages()[, "Package"])]
+  if (length(new)){   
+    install.packages(new, dependencies = TRUE)
+  }
+} 
+
+load.libraries <- function(lib=NULL){
+  sapply(libs, require, character.only = TRUE)
+}
+
+install.libraries(libs)
+load.libraries(libs)
+
+
 
 
 file_save <- ("W:/Pastures/Gridded_seasonal_break") #jackie
@@ -39,9 +37,12 @@ getwd()
 
 
 #site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/SA_Vic_Mallee.shp")
-site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/Lamaroo_buff12.shp")
+#site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/Lamaroo_buff12.shp")
+site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/Lamaroo_rectangle.shp")
+
 site_sf <- as(site_import, "Spatial") #convert to a sp object
-year_input <- 2000
+year_input <- 1972
+site_name <- "Lamaroo"
 site <- site_sf
 plot(site)
 #------------------------------------------------------------------------------------------------------------
@@ -87,7 +88,7 @@ head(site_bound_pts_df_point)
   
   #Add the moving window avearge of 7 days ? should this be sum?
   seasonal_break_rainfall_MovMean7 <- calc(daily_rain_crop_subset_day, function(x) movingFun(x, 7, sum, "to"))
-  
+  #seasonal_break_rainfall_MovMean7 <- calc(daily_rain_crop_subset_day, function(x) movingFun(x, 1, sum, "to"))
   seasonal_break_rainfall_MovMean7
   ############################################
   ##2. Evaporation stuff here similar to above
@@ -102,6 +103,8 @@ head(site_bound_pts_df_point)
   
   #Add the moving window
   seasonal_break_evap_MovMean7 <- calc(daily_evap_crop_subset_day, function(x) movingFun(x, 7, sum, "to"))
+  #seasonal_break_evap_MovMean7 <- calc(daily_evap_crop_subset_day, function(x) movingFun(x, 1, sum, "to"))
+  
   
   #then run the test here Rainfall - evaporation All positive values are the ones I want
   Rain_evap <- seasonal_break_rainfall_MovMean7 - seasonal_break_evap_MovMean7
@@ -158,7 +161,7 @@ head(site_bound_pts_df_point)
   Rain_evap_extract_df_narrow$day_factor <- as.factor(Rain_evap_extract_df_narrow$day)
   Rain_evap_extract_df_narrow$Rain_evap_numb<- as.double(Rain_evap_extract_df_narrow$Rain_evap)
   
-  #dev.off() #having trouble with mapping this fixes it!
+  
  #------------------------------------------------------------------------------------------------------ 
   ggplot(Rain_evap_extract_df_narrow, aes(day, Rain_evap_numb))+
   geom_point()+
@@ -285,37 +288,66 @@ head(site_bound_pts_df_point)
     str(Rain_extract_df_narrow)
     str(Evap_extract_df_narrow)
     str(Rain_evap_extract_df_narrow)
+    #drop some clms so I can join together
+    Rain_extract_df_narrow <- select(Rain_extract_df_narrow,
+                                     day, Rain)
+    Evap_extract_df_narrow <- select(Evap_extract_df_narrow,
+                                     day, Evap)
+    Rain_evap_extract_df_narrow <- select(Rain_evap_extract_df_narrow,
+                                          POINT_X,
+                                          POINT_Y,
+                                          day,
+                                          Rain_evap)
+    
+   
     
     
-    Rain_Evap_both <- cbind(Rain_extract_df_narrow,
-                            Evap_extract_df_narrow,
-                            Rain_evap_extract_df_narrow)
+     Rain_Evap <- left_join(Rain_extract_df_narrow, Evap_extract_df_narrow)
     
+    head(Rain_Evap)
+    Rain_Evap_both <- left_join(Rain_evap_extract_df_narrow,Rain_Evap)
+    str(Rain_Evap_both)  
+      
+    Rain_Evap_both$day_numb <- as.double(Rain_Evap_both$day)
     str(Rain_Evap_both)
     dim(Rain_Evap_both)
     
-    Rain_Evap_both <- Rain_Evap_both[,c(1:5, 12, 19)]
-    Rain_Evap_both$day_numb <- as.double(Rain_Evap_both$day)
     
-    Rain_Evap_both_90_120 <- Rain_Evap_both %>% 
-      filter(between(day_numb, 90, 120))
+    # MAKE THE data set narrow again for easy plotting
+    
+    Rain_Evap_both_plot <- gather(Rain_Evap_both, variable, value, Rain_evap, Rain, Evap)
+    str(Rain_Evap_both_plot)
+    
+    # Rain_Evap_both_90_120 <- Rain_Evap_both %>% 
+    #   filter(between(day_numb, 90, 120))
       
      
     ### Now a bit of stuffing around to check find out what sites are near Lamaroo and what days our day calu does this make sense?
     #In year 2000 this was around 105 and 106
     # in 1972 we have a mix of NA for this same site
     
-    #fix up the graphs so they look good
-    ggplot(Rain_Evap_both,aes(day,Rain))+
-      geom_point(colour='blue') +
-      geom_point(data=Rain_Evap_both,aes(day,Evap),colour='red') +
-      geom_point(data=Rain_Evap_both,aes(day,Rain_evap),colour='black') 
+    
+    ggplot(Rain_Evap_both_plot, aes(day_numb, value, colour = variable))+
+             geom_point(alpha = 0.2)+
+             geom_line()+
+             #geom_smooth(se= FALSE) +
+       #geom_vline(xintercept=105, linetype="dashed", color = "dark green", size = 1)+
+             theme_bw()+
+      labs(title= paste0("Check data for: ", site_name, ", year ", year_input),
+           x ="day of year", 
+           y = "")+
+      scale_colour_manual(values = c("red", "blue", "black"),
+                          name="Climate data",
+                          breaks=c("Evap", "Rain", "Rain_evap"),
+                          labels=c("Evaporation", "Rainfall", "Seasonal break"))
+      
+      
     
     
-    ggplot(Rain_Evap_both_90_120,aes(day_numb,Rain))+
-      geom_point(colour='blue') +
-      geom_point(data=Rain_Evap_both_90_120,aes(day_numb,Evap),colour='red') +
-      geom_point(data=Rain_Evap_both_90_120,aes(day_numb,Rain_evap),colour='black') 
+    
+    
+    
+   
     
     
      
