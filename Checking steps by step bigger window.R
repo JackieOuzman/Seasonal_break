@@ -36,24 +36,25 @@ getwd()
 #bring in my spatial data
 
 
-#site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/SA_Vic_Mallee.shp")
-#site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/Lamaroo_buff12.shp")
+
 site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/Lamaroo_rectangle.shp")
 
 site_sf <- as(site_import, "Spatial") #convert to a sp object
-year_input <- 2018
+year_input <- 1972
 site_name <- "Lameroo"
 site <- site_sf
 plot(site)
+rolling_avearge_days = 7
+#day_of_break = 
 #------------------------------------------------------------------------------------------------------------
 ##1. define the boundary with and use a single layer raster 
 
-  daily_rain <- brick(
-    paste("daily_rain/",
-          "2000", ".daily_rain.nc", sep = ""),varname = "daily_rain")
+  # daily_rain_1 <- brick(
+  #   paste("daily_rain/",
+  #         "2000", ".daily_rain.nc", sep = ""),varname = "daily_rain")
 
 #crop to a fix area
-daily_rain_crop <- crop(daily_rain, site)
+daily_rain_crop <- crop(daily_rain_1, site)
 daily_rain_crop
 
 site_bound_raster <- daily_rain_crop$ X2000.01.01
@@ -76,34 +77,36 @@ head(site_bound_pts_df_point)
   ##1. Rainfall
   
  
-  daily_rain <- brick(
-    paste("daily_rain/",
-          year_input, ".daily_rain.nc", sep = ""),varname = "daily_rain")
+   daily_rain <- brick(
+     paste("daily_rain/",
+           year_input, ".daily_rain.nc", sep = ""),varname = "daily_rain")
   
   #crop to a fix area
   daily_rain_crop <- crop(daily_rain, site)
   
   #only use a few days
-  #daily_rain_crop_subset_day <- subset(daily_rain_crop, 61:182) #pull out the 1stMarch to 30th June leap year
-  daily_rain_crop_subset_day <- subset(daily_rain_crop, 61:213) #pull out the 1stMarch to 31th July 
+  daily_rain_crop_subset_day <- subset(daily_rain_crop, 61:213) #pull out the 1stMarch to 31th July leap year
+   
   #Add the moving window avearge of 7 days ? should this be sum?
-  #seasonal_break_rainfall_MovMean7 <- calc(daily_rain_crop_subset_day, function(x) movingFun(x, 7, sum, "to"))
-  seasonal_break_rainfall_MovMean7 <- calc(daily_rain_crop_subset_day, function(x) movingFun(x, 1, sum, "to"))
+  seasonal_break_rainfall_MovMean7 <- calc(daily_rain_crop_subset_day, function(x) movingFun(x, rolling_avearge_days, sum, "to"))
+  #seasonal_break_rainfall_MovMean7 <- calc(daily_rain_crop_subset_day, function(x) movingFun(x, 1, sum, "to"))
   seasonal_break_rainfall_MovMean7
   ############################################
   ##2. Evaporation stuff here similar to above
-  daily_evap <- brick(
-    paste("evap_pan/",
-          year_input, ".evap_pan.nc", sep = ""),varname = "evap_pan")
+  
+   daily_evap <- brick(
+     paste("evap_pan/",
+           year_input, ".evap_pan.nc", sep = ""),varname = "evap_pan")
+  
   #crop to a fix area
   daily_evap_crop <- crop(daily_evap, site)
   
   #only use a few days
-  #daily_evap_crop_subset_day <- subset(daily_evap_crop, 61:182) #pull out the 1stMarch to 30th June this is leap year days
-  daily_evap_crop_subset_day <- subset(daily_evap_crop, 61:213) #pull out the 1stMarch to 31th July
+  daily_evap_crop_subset_day <- subset(daily_evap_crop, 61:213) #pull out the 1stMarch to 30th June this is leap year days
+  #daily_evap_crop_subset_day <- subset(daily_evap_crop, 61:213) #pull out the 1stMarch to 31th July
   #Add the moving window
-  #seasonal_break_evap_MovMean7 <- calc(daily_evap_crop_subset_day, function(x) movingFun(x, 7, sum, "to"))
-  seasonal_break_evap_MovMean7 <- calc(daily_evap_crop_subset_day, function(x) movingFun(x, 1, sum, "to"))
+  seasonal_break_evap_MovMean7 <- calc(daily_evap_crop_subset_day, function(x) movingFun(x, rolling_avearge_days, sum, "to"))
+  #seasonal_break_evap_MovMean7 <- calc(daily_evap_crop_subset_day, function(x) movingFun(x, 1, sum, "to"))
   
   
   #then run the test here Rainfall - evaporation All positive values are the ones I want
@@ -138,15 +141,19 @@ head(site_bound_pts_df_point)
                                      "151", "152", "153", "154", "155", "156","157","158","159","160",
                                      "161", "162", "163", "164", "165", "166","167","168","169","170",
                                      "171", "172", "173", "174", "175", "176","177","178","179","180",
-                                     "181", "182")
+                                     "181", "182","183", "184", "185", "186", "187", "188" , "189",
+                                     "190", "191", "192", "193", "194", "195", "196", "197", "198",
+                                     "199", "200", "201", "202", "203", "204", "205", "206", "207", 
+                                     "208", "209", "210", "211", "212", "213")
   
   #-----------------------------------------------------------------------------------------------------
   
   #Remove the clm that have no data for  Rain_evap and add the coords
   str(Rain_evap_extract_wide)
-  Rain_evap_extract_wide <- select(Rain_evap_extract_wide, -"61", -"62", -"63", -"64", -"65", -"66" )
+  tail(Rain_evap_extract_wide)
+Rain_evap_extract_wide <- select(Rain_evap_extract_wide, -"61", -"62", -"63", -"64", -"65", -"66" )
   Rain_evap_extract_wide_x_y <- select(Rain_evap_extract_wide, "POINT_X",  "POINT_Y")
-  Rain_evap_extract_wide_values <- select(Rain_evap_extract_wide,"67":"182")
+  Rain_evap_extract_wide_values <- select(Rain_evap_extract_wide,"67":"213")
   
   #make a df with cood and values also add a clm that has a unquie id for grid cell
   Rain_evap_extract_df <- cbind(Rain_evap_extract_wide_x_y, Rain_evap_extract_wide_values)
@@ -154,7 +161,7 @@ head(site_bound_pts_df_point)
   
   #make it a narrow data frame
   Rain_evap_extract_df_narrow <- gather(Rain_evap_extract_df, 
-                                        key = "day", value = "Rain_evap", `67`:`182` )
+                                        key = "day", value = "Rain_evap", `67`:`213` )
   
   
   Rain_evap_extract_df_narrow <- filter(Rain_evap_extract_df_narrow, !is.na(Rain_evap))
@@ -162,19 +169,7 @@ head(site_bound_pts_df_point)
   Rain_evap_extract_df_narrow$Rain_evap_numb<- as.double(Rain_evap_extract_df_narrow$Rain_evap)
   
   
- #------------------------------------------------------------------------------------------------------ 
-  ggplot(Rain_evap_extract_df_narrow, aes(day, Rain_evap_numb))+
-  geom_point()+
-  theme_classic()+
-    theme(axis.text.x = element_text(angle = 90, hjust=1),
-          plot.caption = element_text(hjust = 0))+
-    labs(x = "Day of year",
-         y = "",
-         title = "Seasonal break inputs check for site",
-         caption = "Seasonal break is when sum 7 days rainfall is greater than sum 7 days evaopration")
-  
-  
-  #--------------------------------------------------------------------------------------------------------
+ 
   
     
     ### 2b is the rainfall grid seasonal_break_rainfall_MovMean7
@@ -203,7 +198,10 @@ head(site_bound_pts_df_point)
                                      "151", "152", "153", "154", "155", "156","157","158","159","160",
                                      "161", "162", "163", "164", "165", "166","167","168","169","170",
                                      "171", "172", "173", "174", "175", "176","177","178","179","180",
-                                     "181", "182")
+                                "181", "182","183", "184", "185", "186", "187", "188" , "189",
+                                "190", "191", "192", "193", "194", "195", "196", "197", "198",
+                                "199", "200", "201", "202", "203", "204", "205", "206", "207", 
+                                "208", "209", "210", "211", "212", "213")
   
  # -----------------------------------------------------------------------------------------------------
     
@@ -211,7 +209,7 @@ head(site_bound_pts_df_point)
   
   Rain_extract_wide <- select(Rain_extract_wide, -"61", -"62", -"63", -"64", -"65", -"66" )
   Rain_extract_wide_x_y <- select(Rain_extract_wide, "POINT_X",  "POINT_Y")
-  Rain_extract_wide_values <- select(Rain_extract_wide,"67":"182")
+  Rain_extract_wide_values <- select(Rain_extract_wide,"67":"213")
   
   #make a df with cood and values also add a clm that has a unquie id for grid cell
   Rain_extract_df <- cbind(Rain_extract_wide_x_y, Rain_extract_wide_values)
@@ -219,7 +217,7 @@ head(site_bound_pts_df_point)
   
   #make it a narrow data frame
   Rain_extract_df_narrow <- gather(Rain_extract_df, 
-                                        key = "day", value = "Rain", `67`:`182` )
+                                        key = "day", value = "Rain", `67`:`213` )
   
   
   Rain_extract_df_narrow <- filter(Rain_extract_df_narrow, !is.na(Rain))
@@ -257,7 +255,10 @@ head(site_bound_pts_df_point)
                                 "151", "152", "153", "154", "155", "156","157","158","159","160",
                                 "161", "162", "163", "164", "165", "166","167","168","169","170",
                                 "171", "172", "173", "174", "175", "176","177","178","179","180",
-                                "181", "182")
+                                "181", "182","183", "184", "185", "186", "187", "188" , "189",
+                                "190", "191", "192", "193", "194", "195", "196", "197", "198",
+                                "199", "200", "201", "202", "203", "204", "205", "206", "207", 
+                                "208", "209", "210", "211", "212", "213")
   
   #-----------------------------------------------------------------------------------------------------
     
@@ -265,7 +266,7 @@ head(site_bound_pts_df_point)
     
   Evap_extract_wide <- select(Evap_extract_wide, -"61", -"62", -"63", -"64", -"65", -"66" )
   Evap_extract_wide_x_y <- select(Evap_extract_wide, "POINT_X",  "POINT_Y")
-  Evap_extract_wide_values <- select(Evap_extract_wide,"67":"182")
+  Evap_extract_wide_values <- select(Evap_extract_wide,"67":"213")
   
   #make a df with cood and values also add a clm that has a unquie id for grid cell
   Evap_extract_df <- cbind(Evap_extract_wide_x_y, Evap_extract_wide_values)
@@ -273,7 +274,7 @@ head(site_bound_pts_df_point)
   
   #make it a narrow data frame
   Evap_extract_df_narrow <- gather(Evap_extract_df, 
-                                   key = "day", value = "Evap", `67`:`182` )
+                                   key = "day", value = "Evap", `67`:`213` )
   
   
   Evap_extract_df_narrow <- filter(Evap_extract_df_narrow, !is.na(Evap))
@@ -318,8 +319,7 @@ head(site_bound_pts_df_point)
     Rain_Evap_both_plot <- gather(Rain_Evap_both, variable, value, Rain_evap, Rain, Evap)
     str(Rain_Evap_both_plot)
     
-    # Rain_Evap_both_90_120 <- Rain_Evap_both %>% 
-    #   filter(between(day_numb, 90, 120))
+    
       
      
     ### Now a bit of stuffing around to check find out what sites are near Lamaroo and what days our day calu does this make sense?
@@ -331,11 +331,12 @@ head(site_bound_pts_df_point)
              geom_point(alpha = 0.2)+
              geom_line()+
              #geom_smooth(se= FALSE) +
-       geom_vline(xintercept=166, linetype="dashed", color = "dark green", size = 1)+
+       #geom_vline(xintercept= day_of_break, linetype="dashed", color = "dark green", size = 1)+
              theme_bw()+
       labs(title= paste0("Check data for: ", site_name, ", year ", year_input),
            x ="day of year", 
-           y = "")+
+           y = "",
+           subtitle = paste0("Rolling average = ", rolling_avearge_days, ", Window = 61:212"))+
       scale_colour_manual(values = c("red", "blue", "black"),
                           name="Climate data",
                           breaks=c("Evap", "Rain", "Rain_evap"),
@@ -344,11 +345,12 @@ head(site_bound_pts_df_point)
       
     
     
-    
-    
+    #remove everthing except the rasters from silo for specific year RE RUN SAME YEAR
+    #rm(list = setdiff(ls(), c("daily_rain", "daily_evap", "daily_rain_1")))
     
    
-    
+    #remove everthing except one rasters that set bounds RE RUN NEW YEAR
+     rm(list = setdiff(ls(), c("daily_rain_1")))
     
      
     
