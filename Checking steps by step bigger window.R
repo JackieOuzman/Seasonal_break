@@ -44,14 +44,14 @@ year_input <- 1972
 site_name <- "Lameroo"
 site <- site_sf
 plot(site)
-rolling_avearge_days = 7
+rolling_avearge_days = 5
 #day_of_break = 
 #------------------------------------------------------------------------------------------------------------
 ##1. define the boundary with and use a single layer raster 
 
-  # daily_rain_1 <- brick(
-  #   paste("daily_rain/",
-  #         "2000", ".daily_rain.nc", sep = ""),varname = "daily_rain")
+   # daily_rain_1 <- brick(
+   #   paste("daily_rain/",
+   #         "2000", ".daily_rain.nc", sep = ""),varname = "daily_rain")
 
 #crop to a fix area
 daily_rain_crop <- crop(daily_rain_1, site)
