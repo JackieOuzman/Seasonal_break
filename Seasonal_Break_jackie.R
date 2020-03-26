@@ -33,7 +33,7 @@ load.libraries(libs)
 file_save <- "W:/Pastures/Gridded_seasonal_break" #jackie
 #setwd("T:/Pastures/Gridded_seasonal_break") #bonny
 
-setwd("I:/work/silo") #the folder now has curley bracket which is means something in R so the is a work around
+setwd("Y:/work/silo") #the folder now has curley bracket which is means something in R so the is a work around
 getwd()
 
 #------------------------------------------------------------------------------------------------------------------
@@ -178,14 +178,14 @@ big_data$ID <- seq.int(nrow(big_data))
 
 
 #split the data into years only selecting clms with years and ID
-big_data1 <- select(big_data, -starts_with("POINT"),
+big_data1 <- dplyr::select(big_data, -starts_with("POINT"),
                     -starts_with("x_y"))
 big_data1
 #Now fix up the clm heading names
 colnames(big_data1) <- paste("Year", colnames(big_data1), sep = "_")
 
 #split the data into coords only selecting clms coords and ID
-big_data2 <- select(big_data,POINT_X,POINT_Y, x_y, ID) 
+big_data2 <- dplyr::select(big_data,POINT_X,POINT_Y, x_y, ID) 
 big_data2
 
 #join the two datasets together
@@ -193,84 +193,68 @@ seasonal_break_day_year <- left_join(big_data2, big_data1, by = c("ID" = "Year_I
 head(seasonal_break_day_year)
 seasonal_break_day_year <- select(seasonal_break_day_year,ID, everything()) 
 
-write_csv(seasonal_break_day_year, 
-          "W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/Lameroo_seasonal_break_yrs.csv")
+readr::write_csv(seasonal_break_day_year, 
+          "W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/Aust_seasonal_break_yrs.csv")
 
 ##############################################################################################################
-### what triggered these rainfall events?
-str(seasonal_break_day_year)
-#seasonal_break_day_year[5:52] <- lapply(seasonal_break_day_year[5:52], as.double) 
-
-seasonal_break_day_year_narrow <- gather(seasonal_break_day_year, 
-                                       year, day_of_year, 
-                                       Year_1971 : Year_2018 )
-year_input_rain = 1971
-day_of_year_rain = 110
-  
-daily_rain <- brick(
-  paste("daily_rain/",
-        year_input_rain, ".daily_rain.nc", sep = ""),varname = "daily_rain")
-
-#crop to a fix area
-daily_rain_crop <- crop(daily_rain, site)
-
-#only use a few days
-daily_rain_crop_subset_day <- subset(daily_rain_crop, 61:212) #pull out the 1 March: 30 July 
-
-#Add the moving window avearge of 7 days ? 
-seasonal_break_rainfall_MovMean7 <- calc(daily_rain_crop_subset_day, function(x) movingFun(x, 7, sum, "to")) 
-  
-seasonal_break_rainfall_tigger <- subset(seasonal_break_rainfall_MovMean7, day_of_year_rain)  
-  
-seasonal_break_rainfall_tigger  
-seasonal_break_rainfall_tigger_pt <- raster::extract(seasonal_break_rainfall_tigger, 
-                                     site_bound_pts_df_point, method="simple") 
- 
-seasonal_break_rainfall_tigger_pt_df <- data.frame(year = year_input_rain,
-                                                   day = day_of_year_rain,
-                                                   rainfall = seasonal_break_rainfall_tigger_pt)
-
-seasonal_break_rainfall_tigger_pt_df
-###############################################################################################################
-
-
 #clean up work space
 rm(list=(ls(pattern = "Rain_evap[0-9]")))
 
+#### Play around with graphs
+#need to remove the pts that are GRDC growing zones
 
 
+head(seasonal_break_day_year)
+temp <- seasonal_break_day_year
+#recode my NA to zero.
+str(temp)
+#change to number not factor
+temp[5:52] <- lapply(temp[5:52], as.double) 
+#recode na to 0
+temp[is.na(temp)] <- 0
+head(temp)
 
-
-   
 
 #make data set tidy this will only work with small datasets I dont think I can do it with regions
-seasonal_break_day_year_plot <- gather(seasonal_break_day_year, 
+temp_plot <- gather(temp, 
                                        year, day_of_year, 
-                                       `1971`:`2018`)
-str(seasonal_break_day_year_plot)
-
-
-###################### UP TO HERE ##########################################################################
-
+                                       Year_1971:Year_2018)
+str(temp_plot)
 
 ###graphing options for each year####
+#This is too much data!
+ # ggplot(temp_plot, aes(ID, day_of_year, colour = year))+
+ #   geom_point(alpha = 0.2)+
+ #   geom_line()+
+ #   #geom_smooth(se= FALSE) +
+ #   theme_bw()+
+ #   labs(title= paste0("GRDC - seasonal break days"),
+ #        x ="site", 
+ #        y = "day of year")
 
-
-
-seasonal_break_day_year_plot$year_numb <- as.double(seasonal_break_day_year_plot$year)
-seasonal_break_day_year_plot$day_of_year_numb <- as.double(seasonal_break_day_year_plot$day_of_year)
- 
- ggplot(seasonal_break_day_year_plot, aes(year_numb, day_of_year_numb))+
-   geom_point(alpha = 0.2)+
-   geom_line()+
-   #geom_smooth(se= FALSE) +
-   theme_bw()+
-   labs(title= paste0("Lameroo - seasonal break days"),
-        x ="year", 
-        y = "day of year")
+#temp_plot %>%  filter(between(day_of_year, Year_1971, Year_1975))
+#cant do between using charters need to convert my years back to numbers
         
-###############################################################################################
- # what was the rain events that triggered these breaks
+
+temp_plot %>%  filter(day_of_year == "Year_1971") %>% 
+  ggplot( aes(temp_plot$day_of_year)) + 
+  #geom_histogram()+
+  geom_density(col=2) + 
+  labs(title="Seasonal break") +
+  labs(x="site", y="Count") #+
+  #geom_vline(aes(yintercept=mean(day_of_year)),
+   #           color="blue", linetype="dashed", size=1)
+
+
+##### IF I had GRDC zones or case study sites 
+temp_plot %>%  filter(day_of_year == "Year_1971") %>% 
+  ggplot( aes(temp_plot$day_of_year), colour = GRDC_zones) + 
+  #geom_histogram()+
+  geom_density(col=2) + 
+  labs(title="Seasonal break") +
+  labs(x="day_of_year", y="Count")#+
+  #geom_vline(aes(yintercept=mean(day_of_year)),
+            # color="blue", linetype="dashed", size=1)
 
 
 
