@@ -21,16 +21,21 @@ load.libraries <- function(lib=NULL){
 install.libraries(libs)
 load.libraries(libs)
 
-
+#### Bring in site data
+lameroo <- read.csv("W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/Lameroo_seasonal_break_yrs.csv")
 
 
 ### what triggered these rainfall events?
 str(seasonal_break_day_year)
 #seasonal_break_day_year[5:52] <- lapply(seasonal_break_day_year[5:52], as.double) 
 
-seasonal_break_day_year_narrow <- gather(seasonal_break_day_year, 
+lameroo_narrow <- gather(lameroo, 
                                          year, day_of_year, 
                                          Year_1971 : Year_2018 )
+head(lameroo_narrow)
+#convert Year_1971 into 
+# add and ID clm
+
 year_input_rain = 1971
 day_of_year_rain = 110
 
