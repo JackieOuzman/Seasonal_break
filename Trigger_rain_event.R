@@ -23,8 +23,8 @@ install.libraries(libs)
 load.libraries(libs)
 
 #### Bring in site data
-lameroo <- read.csv("W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/Lameroo_seasonal_break_yrs.csv")
-study_sites <- read.csv("W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/GRDC_zone_seasonal_break_yrs_v2_join_study_sites.csv")
+#lameroo <- read.csv("W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/Lameroo_seasonal_break_yrs.csv")
+study_sites <- read.csv("W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/GRDC_zone_seasonal_break_yrs_v3_join_study_sites.csv")
 
 str(study_sites)
 ## just keep point with site info..
@@ -64,6 +64,31 @@ study_sites <- dplyr::select(study_sites, - junk)
 site = "Lameroo"
 str(study_sites)
 one_study_sites <- filter(study_sites, site_name == site)
+site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/Lamaroo_rectangle.shp")
+
+site_sf <- as(site_import, "Spatial") #convert to a sp object
+site_name <- "Lameroo"
+site <- site_sf
+plot(site)
+##1. define the boundary with and use a single layer raster
+daily_rain <- brick(
+  paste("daily_rain/",
+        2000, ".daily_rain.nc", sep = ""),varname = "daily_rain")
+
+#crop to a fix area
+daily_rain_crop <- crop(daily_rain, site)
+daily_rain_crop
+
+site_bound_raster <- daily_rain_crop$ X2000.01.01
+
+##2. extract points from the raster as a point shapefile
+site_bound_pts <- rasterToPoints(site_bound_raster)
+names(site_bound_pts) <- c("longitude", "latitude", "value")
+site_bound_pts_df <- as.data.frame(site_bound_pts)
+site_bound_pts_df <- dplyr::select(site_bound_pts_df, x, y)
+site_bound_pts_df_point <- SpatialPointsDataFrame(site_bound_pts_df[,c("x", "y")], site_bound_pts_df)
+
+plot(site_bound_pts_df_point)
 
 #add ID clm that the function will use
 one_study_sites$ID_function <- seq.int(nrow(one_study_sites))
@@ -71,20 +96,22 @@ one_study_sites$ID_function <- seq.int(nrow(one_study_sites))
 
 ### i in my loop will be the ID_function
 #so say this i = 1.
-ID_function <- 1
-df <- one_study_sites
-site <- #this will be the rectangle polygon
+#ID_function_list <- 1
+#df <- one_study_sites
 
-list_year <- as.character(c(1:52)) #xx years of data as string
-  
-#function_rain_on_break <- function(list_year, df, site) {
+
+list_year <- as.character(c(1:48)) #xx years of data as string
+################################################
+function_rain_on_break <- function(list_year, df, site) {
+
 year_input_rain <- filter(df, ID_function == list_year) 
-year_input_rain <- year_input_rain[,3]  
+year_input_rain <- year_input_rain[,3] 
+year_input_rain
 #might need to chnage this to numeric I think its a character
 
-day_input_rain <- filter(df, ID_function == 1) 
-day_input_rain <- day_input_rain[,4] 
-
+day_input_rain <- filter(df, ID_function == list_year) 
+day_input_rain <- as.character(day_input_rain[,4] )
+day_input_rain
 
 daily_rain <- brick(
   paste("daily_rain/",
@@ -99,6 +126,7 @@ daily_rain_crop_subset_day <- subset(daily_rain_crop, 61:212) #pull out the 1 Ma
 #Add the moving window avearge of 7 days ? 
 seasonal_break_rainfall_MovMean7 <- calc(daily_rain_crop_subset_day, function(x) movingFun(x, 7, sum, "to")) 
 Rain <- seasonal_break_rainfall_MovMean7
+
 Rain_extract <- raster::extract(Rain, 
                                      site_bound_pts_df_point, method="simple")
 
@@ -133,22 +161,26 @@ names(Rain_extract_wide) <- c("POINT_X", "POINT_Y",
 
 Rain_extract_wide <- dplyr::select(Rain_extract_wide, -"61", -"62", -"63", -"64", -"65", -"66" )
 Rain_extract_wide_x_y <- dplyr::select(Rain_extract_wide, "POINT_X",  "POINT_Y")
-#Rain_extract_wide_values <- dplyr::select(Rain_extract_wide,"67":"212")
+
+return(Rain_extract_wide_values)
+}
+
+for (i in list_year) {
+  assign(paste0("Rain", i), function_rain_on_break(list_year, df, site))
+}
+##################################################################################
+#Up to here the below line is not working as part of function
 Rain_extract_wide_values <- dplyr::select(Rain_extract_wide, day_input_rain) #this is the day I want results for
 
 
-Rain_on_break <- cbind(Rain_evap_extract_wide_x_y, Rain_extract_wide_values)
+Rain_on_break <- cbind(Rain_extract_wide_x_y, Rain_extract_wide_values)
 Rain_on_break <- dplyr::mutate(Rain_on_break, 
                                x_y = paste0(POINT_X, "_", POINT_Y))
-colnames(Rain_on_break) <- c("POINT_X", "POINT_Y", year_input, "x_y")
+colnames(Rain_on_break) <- c("POINT_X", "POINT_Y", year_input_rain, "x_y")
 
-#return(Rain_on_break)
 
-#}
 
-for (i in list_year) {
-  assign(paste0("Rain", i), function_rain_on_break(i, df, site))
-}
+
 
 
 ####Hopefully this works an I will get value for df for each year

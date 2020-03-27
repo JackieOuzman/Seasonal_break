@@ -38,8 +38,8 @@ getwd()
 
 #------------------------------------------------------------------------------------------------------------------
 #set the area for running the analysis
-site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/Lamaroo_rectangle.shp")
-#site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/GRDC_AgroEcological_zones_boundaries_06_region_jax.shp")
+#site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/Lamaroo_rectangle.shp")
+site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/GRDC_AgroEcological_zones_boundaries_06_region_jax.shp")
 
 site_sf <- as(site_import, "Spatial") #convert to a sp object
 site_name <- "Aust"
@@ -201,6 +201,7 @@ seasonal_break_day_year[5:52] <- lapply(seasonal_break_day_year[5:52], as.charac
 seasonal_break_day_year[5:52] <- lapply(seasonal_break_day_year[5:52], as.numeric)
 #recode the na to zero
 seasonal_break_day_year[is.na(seasonal_break_day_year)] <- 0
+seasonal_break_day_year
 readr::write_csv(seasonal_break_day_year, 
           "W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/Aust_seasonal_break_yrs.csv")
 
