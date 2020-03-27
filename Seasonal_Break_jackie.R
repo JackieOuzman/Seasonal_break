@@ -38,8 +38,8 @@ getwd()
 
 #------------------------------------------------------------------------------------------------------------------
 #set the area for running the analysis
-#site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/Lamaroo_rectangle.shp")
-site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/GRDC_AgroEcological_zones_boundaries_06_region_jax.shp")
+site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/Lamaroo_rectangle.shp")
+#site_import <- st_read("W:/Pastures/Gridded_seasonal_break/Boundary_for_analysis/GRDC_AgroEcological_zones_boundaries_06_region_jax.shp")
 
 site_sf <- as(site_import, "Spatial") #convert to a sp object
 site_name <- "Aust"
@@ -191,8 +191,16 @@ big_data2
 #join the two datasets together
 seasonal_break_day_year <- left_join(big_data2, big_data1, by = c("ID" = "Year_ID"))
 head(seasonal_break_day_year)
-seasonal_break_day_year <- select(seasonal_break_day_year,ID, everything()) 
+seasonal_break_day_year <- dplyr::select(seasonal_break_day_year,ID, everything()) 
 
+
+#make data number not factor change to character first and then to number
+
+
+seasonal_break_day_year[5:52] <- lapply(seasonal_break_day_year[5:52], as.character) 
+seasonal_break_day_year[5:52] <- lapply(seasonal_break_day_year[5:52], as.numeric)
+#recode the na to zero
+seasonal_break_day_year[is.na(seasonal_break_day_year)] <- 0
 readr::write_csv(seasonal_break_day_year, 
           "W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/Aust_seasonal_break_yrs.csv")
 
