@@ -97,20 +97,25 @@ one_study_sites$ID_function <- seq.int(nrow(one_study_sites))
 ### i in my loop will be the ID_function
 #so say this i = 1.
 #ID_function_list <- 1
-#df <- one_study_sites
-
+df <- one_study_sites
+df <- mutate(df, day_of_year1 = paste0("Day", day_of_year))
+str(df)
 
 list_year <- as.character(c(1:48)) #xx years of data as string
 ################################################
 function_rain_on_break <- function(list_year, df, site) {
 
+
+#df <- mutate(df, day_of_year1 = paste0("Day", day_of_year))
+#df$day_of_year <- as.character(df$day_of_year)
 year_input_rain <- filter(df, ID_function == list_year) 
 year_input_rain <- year_input_rain[,3] 
 year_input_rain
 #might need to chnage this to numeric I think its a character
 
 day_input_rain <- filter(df, ID_function == list_year) 
-day_input_rain <- as.character(day_input_rain[,4] )
+day_input_rain <- filter(df, ID_function == list_year)
+day_input_rain <- as.character(day_input_rain[,6] )
 day_input_rain
 
 daily_rain <- brick(
@@ -137,85 +142,51 @@ Rain_extract_wide <- data.frame(site_bound_pts_df_point$x,
 
 ##### assign names for all the layers this will days
 names(Rain_extract_wide) <- c("POINT_X", "POINT_Y", 
-                                   "61", "62", "63", "64", "65", "66","67","68","69","70",
-                                   "71", "72", "73", "74", "75", "76","77","78","79","80",
-                                   "81", "82", "83", "84", "85", "86","87","88","89","90",
-                                   "91", "92", "93", "94", "95", "96","97","98","99","100",
-                                   "101", "102", "103", "104", "105", "106","107","108","109","110",
-                                   "111", "112", "113", "114", "115", "116","117","118","119","120",
-                                   "121", "122", "123", "124", "125", "126","127","128","129","130",
-                                   "131", "132", "133", "134", "135", "136","137","138","139","140",
-                                   "141", "142", "143", "144", "145", "146","147","148","149","150",
-                                   "151", "152", "153", "154", "155", "156","157","158","159","160",
-                                   "161", "162", "163", "164", "165", "166","167","168","169","170",
-                                   "171", "172", "173", "174", "175", "176","177","178","179","180",
-                                   "181", "182", "183", "184", "185", "186","187","188","189","190",
-                                   "191", "192", "193", "194", "195", "196","197","198","199","200",
-                                   "201", "202", "203", "204", "205", "206","207","208","209","210", 
-                                   "211", "212")
+                                   "Day61", "Day62", "Day63", "Day64", "Day65", "Day66","Day67","Day68","Day69","Day70",
+                                   "Day71", "Day72", "Day73", "Day74", "Day75", "Day76","Day77","Day78","Day79","Day80",
+                                   "Day81", "Day82", "Day83", "Day84", "Day85", "Day86","Day87","Day88","Day89","Day90",
+                                   "Day91", "Day92", "Day93", "Day94", "Day95", "Day96","Day97","Day98","Day99","Day100",
+                                   "Day101", "Day102", "Day103", "Day104", "Day105", "Day106","Day107","Day108","Day109","Day110",
+                                   "Day111", "Day112", "Day113", "Day114", "Day115", "Day116","Day117","Day118","Day119","Day120",
+                                   "Day121", "Day122", "Day123", "Day124", "Day125", "Day126","Day127","Day128","Day129","Day130",
+                                   "Day131", "Day132", "Day133", "Day134", "Day135", "Day136","Day137","Day138","Day139","Day140",
+                                   "Day141", "Day142", "Day143", "Day144", "Day145", "Day146","Day147","Day148","Day149","Day150",
+                                   "Day151", "Day152", "Day153", "Day154", "Day155", "Day156","Day157","Day158","Day159","Day160",
+                                   "Day161", "Day162", "Day163", "Day164", "Day165", "Day166","Day167","Day168","Day169","Day170",
+                                   "Day171", "Day172", "Day173", "Day174", "Day175", "Day176","Day177","Day178","Day179","Day180",
+                                   "Day181", "Day182", "Day183", "Day184", "Day185", "Day186","Day187","Day188","Day189","Day190",
+                                   "Day191", "Day192", "Day193", "Day194", "Day195", "Day196","Day197","Day198","Day199","Day200",
+                                   "Day201", "Day202", "Day203", "Day204", "Day205", "Day206","Day207","Day208","Day209","Day210", 
+                                   "Day211", "Day212")
 
 #-----------------------------------------------------------------------------------------------------
 
 
 #Remove the clm that have no data for  Rain_evap and add the coords
 
-Rain_extract_wide <- dplyr::select(Rain_extract_wide, -"61", -"62", -"63", -"64", -"65", -"66" )
+Rain_extract_wide <- dplyr::select(Rain_extract_wide, -"Day61", -"Day62", -"Day63", -"Day64", -"Day65", -"Day66" )
 Rain_extract_wide_x_y <- dplyr::select(Rain_extract_wide, "POINT_X",  "POINT_Y")
+#this won't work for select???
+#Rain_extract_wide_values <- dplyr::select(Rain_extract_wide, day_input_rain) #this is the day I want results for
+#Rain_on_break <- cbind(Rain_extract_wide_x_y, Rain_extract_wide_values)
 
-return(Rain_extract_wide_values)
+Rain_on_break <- dplyr::mutate(Rain_extract_wide, 
+                               x_y = paste0(POINT_X, "_", POINT_Y), 
+                               site_name = site_name)
+#colnames(Rain_on_break) <- c("POINT_X", "POINT_Y", year_input_rain, "x_y", 
+#"site")
+
+return(Rain_on_break)
 }
 
 for (i in list_year) {
   assign(paste0("Rain", i), function_rain_on_break(list_year, df, site))
 }
-##################################################################################
-#Up to here the below line is not working as part of function
-Rain_extract_wide_values <- dplyr::select(Rain_extract_wide, day_input_rain) #this is the day I want results for
 
 
-Rain_on_break <- cbind(Rain_extract_wide_x_y, Rain_extract_wide_values)
-Rain_on_break <- dplyr::mutate(Rain_on_break, 
-                               x_y = paste0(POINT_X, "_", POINT_Y))
-colnames(Rain_on_break) <- c("POINT_X", "POINT_Y", year_input_rain, "x_y")
-
-
-
-
-
-
-####Hopefully this works an I will get value for df for each year
-
-
-#make a list of the df 
-df_list = mget(ls(pattern = "Rain[0-9]"))
-big_data = dplyr::bind_cols(df_list)
-#Add an iD clm
-big_data$ID <- seq.int(nrow(big_data))
-
-
-#split the data into years only selecting clms with years and ID
-big_data1 <- dplyr::select(big_data, -starts_with("POINT"),
-                           -starts_with("x_y"))
-big_data1
-#Now fix up the clm heading names
-colnames(big_data1) <- paste("Year", colnames(big_data1), sep = "_")
-
-#split the data into coords only selecting clms coords and ID
-big_data2 <- dplyr::select(big_data,POINT_X,POINT_Y, x_y, ID) 
-big_data2
-
-#join the two datasets together
-rain_on_break <- left_join(big_data2, big_data1, by = c("ID" = "Year_ID"))
-head(rain_on_break)
-rain_on_break <- dplyr::select(rain_on_break,ID, everything()) 
-
-
-#make data number not factor change to character first and then to number
-
-
-rain_on_break[5:52] <- lapply(rain_on_break[5:52], as.character) 
-rain_on_break[5:52] <- lapply(rain_on_break[5:52], as.numeric)
-#recode the na to zero
-rain_on_break[is.na(rain_on_break)] <- 0
-readr::write_csv(rain_on_break, 
-                 "W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/site_rain_on_break.csv")
+####Hopefully this works an I will get value for df for each year -NOPE
+### super not working
+#join the dataset together
+Rain_site <- rbind(Rain1, Rain2, Rain3, Rain4)
+head(Rain_site)
+view(Rain_site)
