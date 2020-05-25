@@ -33,6 +33,10 @@ load.libraries(libs)
 file_save <- "W:/Pastures/Gridded_seasonal_break" #jackie
 #setwd("T:/Pastures/Gridded_seasonal_break") #bonny
 
+#ensure that temp rasters are writting to the correct directory
+#rasterOptions(tmpdir ='//osm-03-mel.it.csiro.au/OSM_MEL_CES_Ag_Systems_MSA_work/Users/')
+rasterOptions(tmpdir ='//138.194.104.21/OSM_MEL_CES_SpatioTemp_scratch')
+
 setwd("Y:/work/silo") #the folder now has curley bracket which is means something in R so the is a work around
 getwd()
 
@@ -72,7 +76,7 @@ plot(site_bound_pts_df_point)
 
 ### list of years ####
 
-jax_list <- as.character(c(1971:2018)) #xx years of data as string
+jax_list <- as.character(c(1971:1973)) #xx years of data as string
 #jax_list <- as.character(c(1971:1975)) #xx years of data as string
 #year_input <- 1971
 #######################################################################################################
@@ -139,18 +143,22 @@ function_rainfall <- function(year_input, site) {
   #head(Rain_extract_wide_x_y)
   
   Rain <- Rain_extract_wide
-  return(Rain)
-   # Rain <- dplyr::mutate(Rain, x_y = paste0(POINT_X, "_", POINT_Y))
+  #return(Rain)
+     Rain <- dplyr::mutate(Rain, x_y = paste0(POINT_X, "_", POINT_Y))
    # Rain <- gather(Rain, key = "day", value = "rain", `67`: `212`)
-   # Rain <- dplyr::mutate(Rain, year = year_input)
+    Rain <- dplyr::mutate(Rain, year = year_input)
    # colnames(Rain) <- c("POINT_X", "POINT_Y", "x_y", "day", "rain", "year")
-   # return(Rain)
+    return(Rain)
 
 }
 
 for (i in jax_list) {
   assign(paste0("Rain_", i), function_rainfall(i, site))
 }
+
+Rain_1971 <- dplyr::mutate(Rain_1971, x_y = paste0(POINT_X, "_", POINT_Y))
+Rain_1972 <- dplyr::mutate(Rain_1972, x_y = paste0(POINT_X, "_", POINT_Y))
+Rain_1973 <- dplyr::mutate(Rain_1973, x_y = paste0(POINT_X, "_", POINT_Y))
 
 head(Rain_1971,2)
 head(Rain_1973, 2)
@@ -164,47 +172,61 @@ df_list = mget(ls(pattern = "Rain_[0-9]")) # this is not what I want...
 
 big_data = dplyr::bind_rows(df_list)
 head(big_data, 3)
-
+tail(big_data, 3)
 #Add an iD clm
 big_data$ID <- seq.int(nrow(big_data))
  head(big_data)
 
-str(big_data)
+tail(str(big_data),2)
 
 big_data$year <- as.numeric(big_data$year)
-big_data$day <- as.numeric(big_data$day)
+big_data$day <-  as.numeric(big_data$day)
+
+head(big_data, 2)
+tail(big_data, 2)
 
 rain_fall_rolling_av <- big_data
 readr::write_csv(rain_fall_rolling_av, 
                  "W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/rain_fall_rolling_av.csv")
+head(rain_fall_rolling_av)
 
 #########################################################################################################
 
 #clean up workspace
-rm(list = ls()[!(ls() %in% c("rain_fall_rolling_av"))])
+#rm(list = ls()[!(ls() %in% c("rain_fall_rolling_av"))])
 
 ########################################################################################################
 
 
 #### what is the site I want to look at 
-#site_coord_ref <-"146.1_-30.7"
-site_coord_ref <-Lamaroo
 
+site_coord_ref <-Lamaroo
+site_coord_ref
 # bring in the day of break data
 seasonal_break_output <-read.csv("W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/GRDC_zone_seasonal_break_yrs_v3_join_study_sites.csv")
+head(seasonal_break_output)
+str(seasonal_break_output$x_y)
+seasonal_break_output$x_y <- as.character(seasonal_break_output$x_y)
 
-subset_seasonal_break_output <- filter(seasonal_break_output, x_y == site_coord_ref)
-head(subset_seasonal_break_output)
+subset_seasonal_break_output <- filter(seasonal_break_output, x_y == "140.45_-35.25")
+
+head(subset_seasonal_break_output, 2)
+
 subset_seasonal_break_output <- gather(subset_seasonal_break_output, 
                                        key = "Year", value = "day", 'Year_1971':'Year_2018' )
+
 head(subset_seasonal_break_output)
+
 subset_seasonal_break_output <- separate(subset_seasonal_break_output,Year, c("junk", "year"), "_" )
 subset_seasonal_break_output <- dplyr::select(subset_seasonal_break_output,  x_y,year, day)
 head(subset_seasonal_break_output)
 ###################################################################################################
 
 #subset the rainfall data by site
-subset_rain_fall_rolling_av <- filter(rain_fall_rolling_av, x_y == site_coord_ref)
+head(rain_fall_rolling_av)
+str(rain_fall_rolling_av$x_y)
+
+subset_rain_fall_rolling_av <- filter(rain_fall_rolling_av, x_y == "140.45_-35.25")
 head(subset_rain_fall_rolling_av)
 head(subset_seasonal_break_output) #this is my base data that I want to add to
 
@@ -216,12 +238,23 @@ unique(subset_seasonal_break_output$x_y) #? not sure why this output as it is - 
 subset_seasonal_break_output$year <- as.numeric(subset_seasonal_break_output$year)
 subset_seasonal_break_output$day <- as.numeric(subset_seasonal_break_output$day)
 
-str(subset_seasonal_break_output)
-str(rain_fall_rolling_av)
+subset_rain_fall_rolling_av$year <- as.numeric(subset_rain_fall_rolling_av$year)
+subset_rain_fall_rolling_av$day <- as.numeric(subset_rain_fall_rolling_av$day)
+
+str(subset_seasonal_break_output) #this is narrow
+str(rain_fall_rolling_av)#thi is wide - needs to be narrow
+str(rain_fall_rolling_av$year)
+head(rain_fall_rolling_av, 2)
 
 
-day_break_with_rainfall <-  left_join(subset_seasonal_break_output, 
-                                      rain_fall_rolling_av, by = c("year","day", "x_y"))
+subset_rain_fall_rolling_av <- gather(subset_rain_fall_rolling_av, 
+                                       key = "day", value = "rainfall", '67':'212' )
+
+str(subset_rain_fall_rolling_av$day)
+str(subset_seasonal_break_output$day)
+
+subset_day_break_with_rainfall <-  left_join(subset_seasonal_break_output, 
+                    subset_rain_fall_rolling_av, by = c("year","day", "x_y"))
 
 
 
@@ -258,3 +291,4 @@ Ardath <- filter(sites_unique, site_name == "Ardath") %>%
   dplyr::select(x_y)
 Mingenew <- filter(sites_unique, site_name == "Mingenew") %>% 
   dplyr::select(x_y)
+
