@@ -71,7 +71,7 @@ plot(site_bound_pts_df_point)
 ### list of years ####
 
 jax_list <- as.character(c(1971:2018)) #xx years of data as string
-
+#jax_list <- as.character(c(1971:1973)) #xx years of data as string
 
 #######################################################################################################
 
@@ -168,7 +168,7 @@ function_rainfall_evap <- function(year_input, site) {
 for (i in jax_list) {
   assign(paste0("Rain_evap", i), function_rainfall_evap(i, site))
 }
-
+ head(Rain_evap1971,3)
 
 #make a list of the grids 
 df_list = mget(ls(pattern = "Rain_evap[0-9]"))
@@ -180,29 +180,32 @@ big_data$ID <- seq.int(nrow(big_data))
 #split the data into years only selecting clms with years and ID
 big_data1 <- dplyr::select(big_data, -starts_with("POINT"),
                     -starts_with("x_y"))
-big_data1
+head(big_data1,3)
 #Now fix up the clm heading names
-colnames(big_data1) <- paste("Year", colnames(big_data1), sep = "_")
+#colnames(big_data1) <- paste("Year", colnames(big_data1), sep = "_")
 
 #split the data into coords only selecting clms coords and ID
 big_data2 <- dplyr::select(big_data,POINT_X,POINT_Y, x_y, ID) 
 big_data2
 
 #join the two datasets together
-seasonal_break_day_year <- left_join(big_data2, big_data1, by = c("ID" = "Year_ID"))
-head(seasonal_break_day_year)
+head(big_data2, 2)
+head(big_data1, 2)
+#seasonal_break_day_year <- left_join(big_data2, big_data1, by = c("ID" = "Year_ID"))
+seasonal_break_day_year <- left_join(big_data2, big_data1, by = c("ID" = "ID"))
+head(seasonal_break_day_year, 2)
 seasonal_break_day_year <- dplyr::select(seasonal_break_day_year,ID, everything()) 
 
 
 #make data number not factor change to character first and then to number
 
-
+str(seasonal_break_day_year)
 seasonal_break_day_year[5:52] <- lapply(seasonal_break_day_year[5:52], as.character) 
 seasonal_break_day_year[5:52] <- lapply(seasonal_break_day_year[5:52], as.numeric)
 #recode the na to zero
 seasonal_break_day_year[is.na(seasonal_break_day_year)] <- 0
 seasonal_break_day_year
-head(seasonal_break_day_year)
+head(seasonal_break_day_year,3)
 readr::write_csv(seasonal_break_day_year, 
           "W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/Aust_seasonal_break_yrs.csv")
 
