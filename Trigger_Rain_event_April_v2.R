@@ -76,8 +76,8 @@ plot(site_bound_pts_df_point)
 
 ### list of years ####
 
-jax_list <- as.character(c(1971:1973)) #xx years of data as string
-#jax_list <- as.character(c(1971:1975)) #xx years of data as string
+#jax_list <- as.character(c(1971:1973)) #xx years of data as string
+jax_list <- as.character(c(1971:2018)) #xx years of data as string
 #year_input <- 1971
 #######################################################################################################
 
@@ -156,12 +156,12 @@ for (i in jax_list) {
   assign(paste0("Rain_", i), function_rainfall(i, site))
 }
 
-Rain_1971 <- dplyr::mutate(Rain_1971, x_y = paste0(POINT_X, "_", POINT_Y))
-Rain_1972 <- dplyr::mutate(Rain_1972, x_y = paste0(POINT_X, "_", POINT_Y))
-Rain_1973 <- dplyr::mutate(Rain_1973, x_y = paste0(POINT_X, "_", POINT_Y))
-
-head(Rain_1971,2)
-head(Rain_1973, 2)
+# Rain_1971 <- dplyr::mutate(Rain_1971, x_y = paste0(POINT_X, "_", POINT_Y))
+# Rain_1972 <- dplyr::mutate(Rain_1972, x_y = paste0(POINT_X, "_", POINT_Y))
+# Rain_1973 <- dplyr::mutate(Rain_1973, x_y = paste0(POINT_X, "_", POINT_Y))
+# 
+# head(Rain_1971,2)
+# head(Rain_1973, 2)
 # I need to change df so its tidy..
 
 
@@ -186,8 +186,13 @@ head(big_data, 2)
 tail(big_data, 2)
 
 rain_fall_rolling_av <- big_data
+# readr::write_csv(rain_fall_rolling_av, 
+#                  "W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/rain_fall_rolling_av.csv")
+
 readr::write_csv(rain_fall_rolling_av, 
-                 "W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/rain_fall_rolling_av.csv")
+                 "//138.194.104.21/OSM_MEL_CES_SpatioTemp_scratch/rain_fall_rolling_av.csv")
+
+
 head(rain_fall_rolling_av)
 
 #########################################################################################################
@@ -197,18 +202,64 @@ head(rain_fall_rolling_av)
 
 ########################################################################################################
 
+####### list of coordinates that I should be using  
+
+#site_coord_ref <-"146.1_-30.7"
+sites <-read.csv("W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/GRDC_zone_seasonal_break_yrs_v3_join_study_sites_only.csv")
+str(sites)
+sites <- dplyr::select(sites, POINT_X, POINT_Y, x_y ,site_name:CENTROID_Y)
+
+#I have 4 point but should I just use one?
+sites_unique <- distinct(sites, site_name, .keep_all = TRUE)
+head(sites_unique$site_name, 20)
+
+Lamaroo <- filter(sites_unique, site_name == "Lameroo") %>% 
+  dplyr::select(x_y)
+Waikerie <- filter(sites_unique, site_name == "Waikerie") %>% 
+  dplyr::select(x_y)
+Waikerie
+Roseworty <- filter(sites_unique, site_name == "Roseworty") %>% 
+  dplyr::select(x_y)
+Roseworty
+Minnipa <- filter(sites_unique, site_name == "Minnipa") %>% 
+  dplyr::select(x_y)
+Minnipa
+Kikoira <- filter(sites_unique, site_name == "Kikoira") %>% 
+  dplyr::select(x_y)
+Kikoira
+Uranquinty <- filter(sites_unique, site_name == "Uranquinty") %>% 
+  dplyr::select(x_y)
+Uranquinty
+Wagga_Wagga <- filter(sites_unique, site_name == "Wagga Wagga") %>% 
+  dplyr::select(x_y)
+Wagga_Wagga
+Eurongilly <- filter(sites_unique, site_name == "Eurongilly") %>% 
+  dplyr::select(x_y)
+Eurongilly
+Piangal <- filter(sites_unique, site_name == "Piangal") %>% 
+  dplyr::select(x_y)
+Piangal
+Ardath <- filter(sites_unique, site_name == "Ardath") %>% 
+  dplyr::select(x_y)
+Ardath
+Mingenew <- filter(sites_unique, site_name == "Mingenew") %>% 
+  dplyr::select(x_y)
+Mingenew
+
+#Extra site Condobolin
+Condobolin <- "147.15_-33.1"
 
 #### what is the site I want to look at 
 
-site_coord_ref <-Lamaroo
-site_coord_ref
+
 # bring in the day of break data
 seasonal_break_output <-read.csv("W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/GRDC_zone_seasonal_break_yrs_v3_join_study_sites.csv")
 head(seasonal_break_output)
 str(seasonal_break_output$x_y)
 seasonal_break_output$x_y <- as.character(seasonal_break_output$x_y)
 
-subset_seasonal_break_output <- filter(seasonal_break_output, x_y == "140.45_-35.25")
+#new site start here
+subset_seasonal_break_output <- filter(seasonal_break_output, x_y == "147.15_-33.1")
 
 head(subset_seasonal_break_output, 2)
 
@@ -226,7 +277,7 @@ head(subset_seasonal_break_output)
 head(rain_fall_rolling_av)
 str(rain_fall_rolling_av$x_y)
 
-subset_rain_fall_rolling_av <- filter(rain_fall_rolling_av, x_y == "140.45_-35.25")
+subset_rain_fall_rolling_av <- filter(rain_fall_rolling_av, x_y == "147.15_-33.1")
 head(subset_rain_fall_rolling_av)
 head(subset_seasonal_break_output) #this is my base data that I want to add to
 
@@ -236,6 +287,7 @@ unique(subset_seasonal_break_output$x_y) #? not sure why this output as it is - 
 
 
 subset_seasonal_break_output$year <- as.numeric(subset_seasonal_break_output$year)
+subset_seasonal_break_output$day <- as.numeric(subset_seasonal_break_output$day)
 subset_seasonal_break_output$day <- as.numeric(subset_seasonal_break_output$day)
 
 subset_rain_fall_rolling_av$year <- as.numeric(subset_rain_fall_rolling_av$year)
@@ -253,42 +305,69 @@ subset_rain_fall_rolling_av <- gather(subset_rain_fall_rolling_av,
 str(subset_rain_fall_rolling_av$day)
 str(subset_seasonal_break_output$day)
 
+head(subset_rain_fall_rolling_av, 2)
+head(subset_seasonal_break_output, 2)
+
+
+subset_rain_fall_rolling_av$day <- as.numeric(subset_rain_fall_rolling_av$day)
+str(subset_rain_fall_rolling_av)
+str(subset_seasonal_break_output)
+
 subset_day_break_with_rainfall <-  left_join(subset_seasonal_break_output, 
                     subset_rain_fall_rolling_av, by = c("year","day", "x_y"))
+Condobolin <- subset_day_break_with_rainfall %>% 
+  mutate(site = "Condobolin")
+head(Condobolin, 2)
+
+readr::write_csv(Condobolin, 
+                 "W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/Condobolin.csv")
+
+#we might want all the sites together??
+
+case_study_site_DOB_Rainfall <- bind_rows( Lamaroo,
+                                           Waikerie,
+                                           Roseworty,
+                                           Minnipa,
+                                           Kikoira,
+                                           Uranquinty,
+                                           Wagga_Wagga,
+                                           Eurongilly,
+                                           Piangal,
+                                           Ardath ,
+                                           Mingenew,
+                                           Condobolin)
+#some summary stats per site on the rainfall clm
+# mean, 25th percentile 
 
 
+library(dplyr)
+library(purrr)
+head(case_study_site_DOB_Rainfall, 2)
 
-####### list of coordinates that I should be using  
+p <- c(0.25, 0.5, 0.75)
+p_names <- map_chr(p, ~paste0(.x*100, "%"))
 
-#site_coord_ref <-"146.1_-30.7"
-sites <-read.csv("W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/GRDC_zone_seasonal_break_yrs_v3_join_study_sites_only.csv")
-str(sites)
-sites <- dplyr::select(sites, POINT_X, POINT_Y, x_y ,site_name:CENTROID_Y)
+p_funs <- map(p, ~partial(quantile, probs = .x, na.rm = TRUE)) %>% 
+  set_names(nm = p_names)
 
-#I have 4 point but should I just use one?
-sites_unique <- distinct(sites, site_name, .keep_all = TRUE)
-head(sites_unique, 20)
+p_funs
 
-Lamaroo <- filter(sites_unique, site_name == "Lameroo") %>% 
-  dplyr::select(x_y)
-Waikerie <- filter(sites_unique, site_name == "Waikerie") %>% 
-  dplyr::select(x_y)
-Roseworty <- filter(sites_unique, site_name == "Roseworty") %>% 
-  dplyr::select(x_y)
-Minnipa <- filter(sites_unique, site_name == "Minnipa") %>% 
-  dplyr::select(x_y)
-Kikoira <- filter(sites_unique, site_name == "Kikoira") %>% 
-  dplyr::select(x_y)
-Uranquinty <- filter(sites_unique, site_name == "Uranquinty") %>% 
-  dplyr::select(x_y)
-Wagga_Wagga <- filter(sites_unique, site_name == "Wagga Wagga") %>% 
-  dplyr::select(x_y)
-Eurongilly <- filter(sites_unique, site_name == "Eurongilly") %>% 
-  dplyr::select(x_y)
-Piangal <- filter(sites_unique, site_name == "Piangal") %>% 
-  dplyr::select(x_y)
-Ardath <- filter(sites_unique, site_name == "Ardath") %>% 
-  dplyr::select(x_y)
-Mingenew <- filter(sites_unique, site_name == "Mingenew") %>% 
-  dplyr::select(x_y)
+rainfall_percentiles <- case_study_site_DOB_Rainfall %>% 
+  group_by(site) %>% 
+  summarize_at(vars(rainfall), funs(!!!p_funs))
 
+
+ 
+rainfall_DOB_mean <-  case_study_site_DOB_Rainfall %>% 
+  dplyr::group_by(site) %>% 
+  dplyr::summarize(mean_rainfall = mean(rainfall, na.rm = TRUE),
+  mean_DOB = mean(day, na.rm = TRUE))
+
+rainfall_DOB_mean
+
+#join the two summary stats togther
+table3 <- left_join(rainfall_percentiles, rainfall_DOB_mean )
+print(table3)
+
+readr::write_csv(table3, 
+                 "W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/table3a.csv")
