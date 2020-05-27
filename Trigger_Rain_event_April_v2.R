@@ -213,6 +213,9 @@ sites <- dplyr::select(sites, POINT_X, POINT_Y, x_y ,site_name:CENTROID_Y)
 sites_unique <- distinct(sites, site_name, .keep_all = TRUE)
 head(sites_unique$site_name, 20)
 
+readr::write_csv(sites_unique, 
+                 "W:/Pastures/Gridded_seasonal_break/Check_code_selected_sites/sites_unique.csv")
+
 Lamaroo <- filter(sites_unique, site_name == "Lameroo") %>% 
   dplyr::select(x_y)
 Waikerie <- filter(sites_unique, site_name == "Waikerie") %>% 
